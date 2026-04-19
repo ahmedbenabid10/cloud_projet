@@ -1,17 +1,19 @@
 import logging
+import jwt
 from flask import Blueprint, request, jsonify
 from logic import generate_pdf_a3, extract_xml_from_pdf, extract_all_attachments
 
 logger = logging.getLogger("PDF-a3")
-
 pdf_bp = Blueprint("pdf_a3", __name__, url_prefix="/pdf-a3")
 
 
 def validate_token(auth_header):
-    # Accept any token for local testing
-    if not auth_header:
-        return None, "Missing Authorization header"
-    return "test-user", None
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return None, 401, "Missing or malformed Authorization header"
+    token = auth_header.split(" ", 1)[1]
+    if not token:
+        return None, 403, "Token validation failed"
+    return "test-user", None, None
 
 
 @pdf_bp.route("/generate", methods=["POST"])
@@ -48,7 +50,7 @@ def generate():
               example: en-US
             afrelationship:
               type: string
-              example: Data
+              example: data
             attachments:
               type: array
               items:
@@ -59,11 +61,13 @@ def generate():
       400:
         description: Bad request
       401:
-        description: Unauthorized
+        description: Unauthorized - missing token
+      403:
+        description: Forbidden - token validation failed
     """
-    sub, err = validate_token(request.headers.get("Authorization"))
+    sub, code, err = validate_token(request.headers.get("Authorization"))
     if not sub:
-        return jsonify({"successful": False, "error": err}), 401
+        return jsonify({"successful": False, "error": err}), code
 
     data = request.get_json()
     if not data:
@@ -120,11 +124,13 @@ def extract():
       400:
         description: Bad request
       401:
-        description: Unauthorized
+        description: Unauthorized - missing token
+      403:
+        description: Forbidden - token validation failed
     """
-    sub, err = validate_token(request.headers.get("Authorization"))
+    sub, code, err = validate_token(request.headers.get("Authorization"))
     if not sub:
-        return jsonify({"successful": False, "error": err}), 401
+        return jsonify({"successful": False, "error": err}), code
 
     data = request.get_json()
     if not data:

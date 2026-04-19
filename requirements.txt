@@ -1,5 +1,8 @@
 flask
+flask-cors
 flasgger
 pyjwt
 requests
 factur-x
+pypdf
+cryptography
