@@ -1,0 +1,5 @@
+flask
+flasgger
+pyjwt
+requests
+factur-x
